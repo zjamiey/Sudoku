@@ -6,8 +6,8 @@ import java.util.Scanner;
 
 /**
  * Author: Jamie Yang
- * Date: 12/29/2020
- * Version: building
+ * Date: 01/02/2020
+ * Version: beta
  * Class Description: Object that stores all grids and categorize them into their groups,
  *  keeps track of the empty grids,*/
 public class Board {
@@ -102,12 +102,16 @@ public class Board {
                     cols[j].addGrid(i, curr);
                     if(val == 0){
                         emptyGrids.add(curr);
+                        curr.setFixed();
                     }
                     board[i][j] = curr;
                 }
             }
             updatePossibilities();
-            sortByPossibilities();
+            sortByPossibilities(emptyGrids,0,emptyGrids.size()-1);
+/*
+            printSinglePossibilities();
+*/
         }catch(IOException e){
             System.out.println("Incorrect file path, please enter a valid path!");
             changeFileName();
@@ -133,8 +137,10 @@ public class Board {
             row = rows[curr.getRowID()];
             col = cols[curr.getColID()];
             nine = nines[curr.getXyID()];
-/*            System.out.println("( "+curr.getRowID()+", "+curr.getColID()+" )");
-            System.out.println("row "+rd+": "+row.getPossibilities());
+/*
+            System.out.println("( "+curr.getRowID()+", "+curr.getColID()+" )");
+*/
+/*            System.out.println("row "+rd+": "+row.getPossibilities());
             System.out.println("col "+cd+": "+col.getPossibilities());
             System.out.println("nine "+nd+": "+nine.getPossibilities());*/
             curr.setPossibilities(combinePossibilities(row,col,nine));
@@ -163,16 +169,80 @@ public class Board {
                 list.add(i);
             }
         }
+/*
         System.out.println("Combined:" + list);
+*/
         return list;
     }
 
     /**Sorts emptyGrid in ascending order of number of possibilities using quick sort*/
-    public void sortByPossibilities(){
-
+    public void sortByPossibilities(ArrayList<Grid> grids, int low, int high){
+        int pivot;
+        if(low < high){
+            pivot = partition(grids,low,high);
+            sortByPossibilities(grids,low,pivot-1);
+            sortByPossibilities(grids,pivot+1,high);
+        }
     }
 
-    public void printInString(){
+    public int partition(ArrayList<Grid> grids, int low, int high){
+        Grid pivot = grids.get(high);
+        int numOfPoss = pivot.getPossibilities().size();
+        Grid curr;
+        int i = low-1;
+        for(int j = low; j<high; j++){
+            curr = grids.get(j);
+            if(curr.getPossibilities().size() < numOfPoss){
+                i++;
+                grids.set(j,grids.get(i));
+                grids.set(i,curr);
+            }
+        }
+        curr = grids.get(i+1);
+        grids.set(i+1,pivot);
+        grids.set(high,curr);
+        return i+1;
+    }
+
+    public void tryNum(Grid curr, int val){
+        Group row;
+        Group col;
+        Group nine;
+        curr.setValue(val);
+        row = rows[curr.getRowID()];
+        col = cols[curr.getColID()];
+        nine = nines[curr.getXyID()];
+        row.removePossibility(val);
+        col.removePossibility(val);
+        nine.removePossibility(val);
+        if(row.isFilled() && row.getSum() != 45){
+            row.undo(curr);
+        }else if(col.isFilled() && col.getSum() != 45){
+            col.undo(curr);
+        }else if(nine.isFilled() && nine.getSum() != 45){
+            nine.undo(curr);
+        }else {
+            updatePossibilities();
+            sortByPossibilities(emptyGrids, 0, emptyGrids.size()-1);
+/*
+            printSinglePossibilities();
+*/
+            fillEmptyGrids();
+        }
+    }
+
+    public void fillEmptyGrids(){
+        if(!emptyGrids.isEmpty()) {
+            Grid curr = emptyGrids.get(0);
+            emptyGrids.remove(curr);
+            ArrayList<Integer> possibilities = new ArrayList<>(curr.getPossibilities());
+            for(int i = 0; i<possibilities.size();i++){
+                tryNum(curr,possibilities.get(i));
+            }
+        }
+    }
+
+    public void printGroupPossibilities(){
         for(int i = 0; i< size; i++){
             System.out.println("row "+i+": "+rows[i].getPossibilities());
         }
@@ -189,6 +259,21 @@ public class Board {
         for(int i = 0; i< emptyGrids.size(); i++){
             curr = emptyGrids.get(i);
             System.out.println("( "+curr.getRowID()+", "+curr.getColID()+" )"+" possibilities: "+curr.getPossibilities());
+        }
+        System.out.println();
+    }
+
+    public boolean checkResult(){
+
+        return true;
+    }
+
+    public void printBoard(){
+        for(int i = 0; i<size; i++){
+            for(int j= 0; j<size; j++){
+                System.out.print(board[i][j].getValue()+" ");
+            }
+            System.out.println();
         }
     }
 

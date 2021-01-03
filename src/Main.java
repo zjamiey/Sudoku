@@ -2,7 +2,7 @@ import java.util.Scanner;
 /**
  * Author: Jamie Yang
  * Date: 1/02/2020
- * Version: building
+ * Version: beta
  * Class Description: Main loop of that initiates the board
  * */
 public class Main {
@@ -14,9 +14,12 @@ public class Main {
         filename = scanner.nextLine();*/
         Board board = new Board(filename);
         board.initBoard();
-/*
-        board.printInString();
-*/
-        board.printSinglePossibilities();
+        board.fillEmptyGrids();
+        if(board.checkResult()) {
+            System.out.println("The sudoku puzzle is solved as following:");
+            board.printBoard();
+        }else{
+            System.out.println("Failed to solve the puzzle!");
+        }
     }
 }

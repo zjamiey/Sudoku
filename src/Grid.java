@@ -4,7 +4,7 @@ import java.util.HashSet;
 /**
  * Author: Jamie Yang
  * Date: 1/02/2020
- * Version: building
+ * Version: beta
  * Class Description: Object representing the an individual grid of the puzzle,
  * it an number value, 3 IDs that represents which the 3 groups that it belongs to,
  * and set of possible values that can be assigned to this grid*/
@@ -17,6 +17,7 @@ public class Grid {
     private final int XY_ID;
     /**Set of possible values that can be assigned to this grid*/
     private HashSet<Integer> possibilities;
+    private boolean fixed = false;
 
     public Grid(int rowID, int colID, int xyID, int value){
         ROW_ID = rowID;
@@ -28,6 +29,14 @@ public class Grid {
 
     public int getRowID(){
         return ROW_ID;
+    }
+
+    public void setFixed(){
+        fixed = true;
+    }
+
+    public boolean isFixed(){
+        return fixed;
     }
 
     public int getColID(){
