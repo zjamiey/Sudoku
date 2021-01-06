@@ -1,8 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * Author: Jamie Yang
@@ -23,6 +22,8 @@ public class Board {
     private Grid[][] board = new Grid[size][size];
     /**Name of the input File of initial sudoku game*/
     private String filename;
+    private int index = 0;
+    private Stack<Integer> branchedIndex = new Stack<>();
 
     /**Constructs the board with a file name that is given by main
      * and initialize the global variables*/
@@ -122,27 +123,15 @@ public class Board {
     /**Update possibilities of all empty grids, checks out possibilities
      * of all 3 groups of each grid*/
     public void updatePossibilities(){
-        Grid curr;
         Group row;
         Group col;
         Group nine;
-/*        int rd;
-        int cd;
-        int nd;*/
-        for(int i = 0; i<emptyGrids.size(); i++){
-            curr = emptyGrids.get(i);
-/*            rd = curr.getRowID();
-            cd = curr.getColID();
-            nd = curr.getXyID();*/
+        for(Grid curr:emptyGrids){
+
             row = rows[curr.getRowID()];
             col = cols[curr.getColID()];
             nine = nines[curr.getXyID()];
-/*
-            System.out.println("( "+curr.getRowID()+", "+curr.getColID()+" )");
-*/
-/*            System.out.println("row "+rd+": "+row.getPossibilities());
-            System.out.println("col "+cd+": "+col.getPossibilities());
-            System.out.println("nine "+nd+": "+nine.getPossibilities());*/
+
             curr.setPossibilities(combinePossibilities(row,col,nine));
         }
     }
@@ -162,16 +151,10 @@ public class Board {
             x = a.getPossibilities().contains(i);
             y = b.getPossibilities().contains(i);
             z = c.getPossibilities().contains(i);
-/*
-            System.out.println("i = "+i+" "+x+" "+y+" "+z);
-*/
             if(x && y && z){
                 list.add(i);
             }
         }
-/*
-        System.out.println("Combined:" + list);
-*/
         return list;
     }
 
@@ -204,77 +187,94 @@ public class Board {
         return i+1;
     }
 
-    public void tryNum(Grid curr, int val){
-        Group row;
-        Group col;
-        Group nine;
-        curr.setValue(val);
-        row = rows[curr.getRowID()];
-        col = cols[curr.getColID()];
-        nine = nines[curr.getXyID()];
-        row.removePossibility(val);
-        col.removePossibility(val);
-        nine.removePossibility(val);
-        if(row.isFilled() && row.getSum() != 45){
-            row.undo(curr);
-        }else if(col.isFilled() && col.getSum() != 45){
-            col.undo(curr);
-        }else if(nine.isFilled() && nine.getSum() != 45){
-            nine.undo(curr);
-        }else {
-            updatePossibilities();
-            sortByPossibilities(emptyGrids, 0, emptyGrids.size()-1);
-/*
-            printSinglePossibilities();
-*/
-            fillEmptyGrids();
-        }
-    }
-
-    public void fillEmptyGrids(){
-        if(!emptyGrids.isEmpty()) {
-            Grid curr = emptyGrids.get(0);
-            emptyGrids.remove(curr);
-            ArrayList<Integer> possibilities = new ArrayList<>(curr.getPossibilities());
-            for(int i = 0; i<possibilities.size();i++){
-                tryNum(curr,possibilities.get(i));
+    public int findNextEmpty(){
+        for (int i = 0; i< emptyGrids.size(); i++){
+            if(emptyGrids.get(i).getValue() == 0){
+                return i;
             }
         }
+        return -1;
     }
 
-    public void printGroupPossibilities(){
-        for(int i = 0; i< size; i++){
-            System.out.println("row "+i+": "+rows[i].getPossibilities());
+    public boolean fillNextEmpty(){
+        int nextEmpty = findNextEmpty();
+        if(nextEmpty > -1) {
+            Grid curr = emptyGrids.get(nextEmpty);
+            ArrayList<Integer> possibilities = new ArrayList<>(curr.getPossibilities());
+            Group row = rows[curr.getRowID()];
+            Group col = cols[curr.getColID()];
+            Group nine = nines[curr.getXyID()];
+            for (int val : possibilities) {
+                if (row.getPossibilities().contains(val) && col.getPossibilities().contains(val)
+                        && nine.getPossibilities().contains(val)) {
+                    curr.setValue(val);
+                    row.removePossibility(val);
+                    col.removePossibility(val);
+                    nine.removePossibility(val);
+/*
+                    printBoard();
+*/
+                    if(!fillNextEmpty()){
+                        row.undo(val);
+                        col.undo(val);
+                        nine.undo(val);
+                        curr.setValue(0);
+                    }else{
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
-        for(int i = 0; i< size; i++){
-            System.out.println("col "+i+": "+cols[i].getPossibilities());
-        }
-        for(int i = 0; i< size; i++){
-            System.out.println("nine "+i+": "+nines[i].getPossibilities());
-        }
+        return true;
     }
 
-    public void printSinglePossibilities(){
-        Grid curr;
-        for(int i = 0; i< emptyGrids.size(); i++){
-            curr = emptyGrids.get(i);
-            System.out.println("( "+curr.getRowID()+", "+curr.getColID()+" )"+" possibilities: "+curr.getPossibilities());
+    /**First check if there are no empty grids left, then checks the sum of every
+     * group, see if they are 45, because it is impossible to have duplicate
+     * numbers to appear in the same group, so the group must be filled
+     * correctly if the sum = 45*/
+    public boolean checkResult(){
+        if(emptyGrids.isEmpty()) {
+            for (int i = 0; i < size; i++) {
+                if (rows[i].getSum() != 45) {
+                    return false;
+                }
+            }
+            for (int i = 0; i < size; i++) {
+                if (cols[i].getSum() != 45) {
+                    return false;
+                }
+            }
+            for (int i = 0; i < size; i++) {
+                if (nines[i].getSum() != 45) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void printSinglePossibilities() {
+        for (Grid curr : emptyGrids) {
+            System.out.println("( " + curr.getRowID() + ", " + curr.getColID() + " )" + " possibilities: " + curr.getPossibilities());
         }
         System.out.println();
     }
 
-    public boolean checkResult(){
-
-        return true;
-    }
-
     public void printBoard(){
         for(int i = 0; i<size; i++){
+            if(i%3 == 0) {
+                System.out.println("---------------------");
+            }
             for(int j= 0; j<size; j++){
+                if(j % 3 == 0){
+                    System.out.print("|");
+                }
                 System.out.print(board[i][j].getValue()+" ");
             }
-            System.out.println();
+            System.out.println("|");
         }
+        System.out.println("---------------------\n");
     }
 
 }

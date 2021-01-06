@@ -8,17 +8,20 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String args[]){
-        String filename = "G:/Projects/Soduku/resource/test1.txt";
-/*        Scanner scanner = new Scanner(System.in);
+        String filename;
+        Scanner scanner = new Scanner(System.in);
         System.out.println("Please enter the file path:");
-        filename = scanner.nextLine();*/
+        filename = scanner.nextLine();
         Board board = new Board(filename);
         board.initBoard();
-        board.fillEmptyGrids();
+        System.out.println("This is the sudoku puzzle to solve:");
+        board.printBoard();
+        board.fillNextEmpty();
         if(board.checkResult()) {
             System.out.println("The sudoku puzzle is solved as following:");
             board.printBoard();
         }else{
+            board.printBoard();
             System.out.println("Failed to solve the puzzle!");
         }
     }

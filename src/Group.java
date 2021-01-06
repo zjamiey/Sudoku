@@ -43,12 +43,9 @@ public class Group {
         return sum;
     }
 
-    public void undo(Grid curr){
-        if(!curr.isFixed()) {
-            possibilities.add(curr.getValue());
-            sum += curr.getValue();
-            curr.setValue(0);
-        }
+    public void undo(int val){
+        possibilities.add(val);
+        sum -= val;
     }
 
     public HashSet<Integer> getPossibilities(){
